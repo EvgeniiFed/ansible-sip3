@@ -1,0 +1,15 @@
+---
+
+- name: "SIP3 deploy"
+  hosts: all
+  become: yes
+  become_user: root
+  roles:
+    - mongodb
+    - influxdb
+    - java
+    - salto
+    - twig
+    - hoof
+  tags:
+    - sip3_backend

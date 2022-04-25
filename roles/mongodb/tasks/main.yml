@@ -1,0 +1,92 @@
+---
+
+- name: "Import MongoDB public GPG Key"
+  apt_key:
+    keyserver: hkp://keyserver.ubuntu.com:80
+    id: 9DA31620334BD75D9DCB49F368818C72E52529D4
+  tags:
+    - sip3_common
+
+- name: "Add MongoDB repository into sources list"
+  apt_repository:
+    repo: deb http://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse
+    state: present
+    update_cache: yes
+  tags:
+    - sip3_common
+
+- name: "Install MongoDB package"
+  apt:
+    name: mongodb-org
+    update_cache: yes
+    state: present
+  tags:
+    - sip3_common
+
+- name: "Creates directory {{ mongodb.path | default('/data/db') }} for MongoDB"
+  file:
+    path: "{{ mongodb.path | default('/data/db') }}"
+    state: directory
+    mode: 0755
+    group: mongodb
+    owner: mongodb
+  tags:
+    - sip3_common
+
+- name: "Create directory '/var/run/mongodb' for MongoDB"
+  file:
+    path: "/var/run/mongodb"
+    state: directory
+    mode: 0755
+    group: mongodb
+    owner: mongodb
+  tags:
+    - sip3_common
+
+- name: "Create MongoDB config"
+  template:
+    src: templates/mongod.conf.j2
+    dest: /etc/mongod.conf
+  tags:
+    - sip3_common
+
+- name: "Deploying MongoDB config for recreate /var/run/mongodb on tmpfs"
+  template:
+    src: templates/mongodb.conf.tmpfs.j2
+    dest: /usr/lib/tmpfiles.d/mongodb.conf
+  tags:
+    - sip3_common
+
+- name: "Start service MongoDB"
+  systemd:
+    name: mongod
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+  tags:
+    - sip3_common
+
+- name: "Wait for MongoDB service starts"
+  wait_for:
+    host: 127.0.0.1
+    port: "{{ mongodb.port }}"
+    delay: 1
+    timeout: 15
+  tags:
+    - sip3_common
+
+- name: "Flush hostmap"
+  shell: mongo --host "{{ mongodb.address | default(address | default('127.0.0.1')) }}" "{{ mongodb.db | default(address | default('sip3')) }}" --port {{ mongodb.port | default('27017') }} --eval 'db.hosts.drop()'
+  tags:
+    - sip3_common
+
+- name: "Insert hostmap into MongoDB"
+  shell: mongo --host "{{ mongodb.address | default(address | default('127.0.0.1')) }}" "{{ mongodb.db | default(address | default('sip3')) }}" --port {{ mongodb.port | default('27017') }} --eval 'db.hosts.insert({{ item | to_json(ensure_ascii=False)}})'
+  loop: "{{ hostmap }}"
+  tags:
+    - sip3_common
+
+- name: "Create index for hostmap"
+  shell: "mongo --host \"{{ mongodb.address | default(address | default('127.0.0.1')) }}\" \"{{ mongodb.db | default(address | default('sip3')) }}\" --port {{ mongodb.port | default('27017') }} --eval 'db.hosts.createIndex({ name: 1 })'"
+  tags:
+    - sip3_common

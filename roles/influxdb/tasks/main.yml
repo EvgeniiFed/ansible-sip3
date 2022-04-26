@@ -1,0 +1,58 @@
+---
+
+- name: "Install gnupg and apt-transport-https packages"
+  apt:
+    pkg:
+      - gnupg
+      - apt-transport-https
+  tags:
+    - sip3_common
+
+- name: "Add signing key for InfluxDB repository"
+  apt_key:
+    url: "https://repos.influxdata.com/influxdb.key"
+    state: present
+  tags:
+    - sip3_common
+
+- name: "Add InfluxDB repository"
+  apt_repository:
+    repo: deb https://repos.influxdata.com/debian {{ ansible_facts['lsb']['codename'] }} stable
+    state: present
+    filename: influxdb
+    update_cache: yes
+  tags:
+    - sip3_common
+
+- name: "Install the latest version of InfluxDB"
+  apt:
+    pkg:
+      - influxdb
+  tags:
+    - sip3_common
+
+- name: "Creates directory {{ influxdb.path | default('/var/lib/influxdb') }} for InfluxDB"
+  file:
+    path: "{{ influxdb.path | default('/var/lib/influxdb') }}"
+    state: directory
+    mode: 0755
+    group: influxdb
+    owner: influxdb
+  tags:
+    - sip3_common
+
+- name: "Create InfluxDB config"
+  template:
+    src: templates/influxdb.conf.j2
+    dest: /etc/influxdb/influxdb.conf
+  tags:
+    - sip3_common
+
+- name: "Start service InfluxDB"
+  systemd:
+    name: influxdb
+    state: started
+    daemon_reload: yes
+    enabled: yes
+  tags:
+    - sip3_common

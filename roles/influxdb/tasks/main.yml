@@ -6,14 +6,14 @@
       - gnupg
       - apt-transport-https
   tags:
-    - sip3_common
+    - sip3_backend
 
 - name: "Add signing key for InfluxDB repository"
   apt_key:
     url: "https://repos.influxdata.com/influxdb.key"
     state: present
   tags:
-    - sip3_common
+    - sip3_backend
 
 - name: "Add InfluxDB repository"
   apt_repository:
@@ -22,14 +22,14 @@
     filename: influxdb
     update_cache: yes
   tags:
-    - sip3_common
+    - sip3_backend
 
 - name: "Install the latest version of InfluxDB"
   apt:
     pkg:
       - influxdb
   tags:
-    - sip3_common
+    - sip3_backend
 
 - name: "Creates directory {{ influxdb.path | default('/var/lib/influxdb') }} for InfluxDB"
   file:
@@ -39,14 +39,14 @@
     group: influxdb
     owner: influxdb
   tags:
-    - sip3_common
+    - sip3_backend
 
 - name: "Create InfluxDB config"
   template:
     src: templates/influxdb.conf.j2
     dest: /etc/influxdb/influxdb.conf
   tags:
-    - sip3_common
+    - sip3_backend
 
 - name: "Start service InfluxDB"
   systemd:
@@ -55,4 +55,4 @@
     daemon_reload: yes
     enabled: yes
   tags:
-    - sip3_common
+    - sip3_backend

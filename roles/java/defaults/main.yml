@@ -1,0 +1,8 @@
+---
+
+java:
+  version: 1.8.0
+  xms: 512M
+  xmx: 1024M
+  gc: G1
+  other: -XX:+PrintGCDetails

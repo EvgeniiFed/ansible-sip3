@@ -1,0 +1,37 @@
+---
+version: 2021.2.3
+features:
+  - call
+salto:
+  webhook:
+    body: |
+      {
+        "text": ":fire: Sip3 Salto :fire:",
+        "attachments": [
+          {
+            "text": "{message}"
+          }
+        ]
+      }
+  address: "{{ ansible_host }}"
+  port: 15060
+  collections:
+    sip_index_index:
+      max_collections: 30
+    sip_index_raw:
+      max_collections: 30
+    sip_register_index:
+      max_collections: 10
+    sip_register_raw:
+      max_collections: 10
+    attributes:
+      max_collections: 30
+  attributes:
+    record_ip_addresses: true
+  udf:
+    - name: "sip_udf_function.groovy"
+      body: |
+        package udf
+        vertx.eventBus().localConsumer("sip_message_udf", { event ->
+            event.reply(true)
+        })
